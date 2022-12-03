@@ -10,11 +10,13 @@ Platform:
 import json
 import googlemaps
 import os
+import re
+from serpapi import GoogleSearch
 
-from api_google_key import get_api_key
+from api_google_key import get_api_key, get_api_key_serpapi
 
 
-def extract_comments(place_id, api_key, update=False, save=False, output_path=None):
+def extract_comments_google_maps_api(place_id, api_key, update=False, save=False, output_path=None):
 
     output_file = os.path.join(output_path, place_id+".json")
 
@@ -39,11 +41,73 @@ def extract_comments(place_id, api_key, update=False, save=False, output_path=No
     return place_comments
 
 
+def extract_comments_serpapi_api(place_id, n_comments, save=False, output_path=None, update=False):
+
+    API_KEY = get_api_key_serpapi() # To replace with your API key
+
+    # Check parameters
+    if save:
+        output_file = os.path.join(output_path, place_id + ".json")
+        if not output_path:
+            print('save data but not output path given')
+            return {}
+
+        elif os.path.exists(output_file) and not update:
+            print("Location already exists no API call made")
+            print("If you want to update the comments: update=True")
+            return {}
+
+    reviews = {'rating': None, 'comments': {}}
+
+    # Search for the place
+    params = {"engine": "google_maps", "data": place_id, "type": "place", "api_key": API_KEY}
+    search = GoogleSearch(params)
+    results = search.get_dict()
+    data_id = results['place_results']["data_id"]
+    reviews['rating'] = results['place_results']['rating']
+    reviews['type'] = results['type']
+    reviews['extension'] = results['extension']
+
+
+    # Extract comment from the place 10 by 10
+    params = {"engine": "google_maps_reviews", "data_id": data_id, "api_key": API_KEY,  "hl": 'en'}
+    search = GoogleSearch(params)
+    results = search.get_dict()
+    reviews['comments'].update({i: result['snippet'] for i, result in enumerate(results['reviews'])})
+    last_key = max(list(reviews.keys()))
+    for i in range(int(n_comments / 10.0)):
+        if results['serpapi_pagination']['next_page_token']:
+            params.update({"next_page_token": results['serpapi_pagination']['next_page_token']})
+            search = GoogleSearch(params)
+            results = search.get_dict()
+            for i, result in enumerate(results['reviews']):
+                if 'Translated' in result['snippet']:
+                    text = result['snippet']
+                    start_ = re.search('Translated by Google\) ', text).end()
+                    end_ = re.search("\(Original \)").start()
+                    text = text[start_:end_]
+                else:
+                    reviews.update({last_key+i:result['snippet']})
+        # TODO: ensure we do not erase previous comments
+    if save or update:
+        with open(os.path.join(output_path, place_id + ".json"), 'w') as outfile:
+            json.dump(reviews, outfile, indent=4)
+
+
+def extract_comment_tripadvisor():
+    pass
+
+
 if __name__ == "__main__":
 
     data_path = r"C:\Users\Lucas\Desktop\Lauzhack2022\mend-mi\data"
     API_KEY = get_api_key()
 
     test_id = "ChIJz1bX4zMujEcRDLSYjd7SNyk"
-    test = extract_comments(test_id, API_KEY, save=True, output_path=data_path)
 
+    # Changed to serpapi
+    # test = extract_comments_google_maps_api(test_id, API_KEY, save=True, output_path=data_path)
+
+    test_id_serp = "!4m5!3m4!1s0x0:0x3a6ff8042927ea2c!8m2!3d46.8053241!4d7.1562764"  # Restaurant Molino, Fribourg
+    test_id_serp = "!4m5!3m4!1s0x0:0x47188bb9f8d68e6b!8m2!3d46.5246408!4d6.6143108" # Escape Game, Lausanne
+    test = extract_comments_serpapi_api(test_id_serp, n_comments=10, save=True, output_path="data_path")
