@@ -1,0 +1,13 @@
+{
+  "User":{
+    "Name": "Anone Hymous",
+    "Age": 25,
+    "email": "anone.hymous@gmail.com",
+    "google_maps":{
+         "place_id":{
+           "0": "ChIJz1bX4zMujEcRDLSYjd7SNyk",
+         },
+         "coordinate": "..."
+    }
+  }
+}
