@@ -12,7 +12,6 @@ import googlemaps
 import os
 import re
 from serpapi import GoogleSearch
-
 from api_key import get_api_key, get_api_key_serpapi
 
 
