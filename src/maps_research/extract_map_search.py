@@ -6,7 +6,6 @@ def get_location_local_results(q):
   params = {
     "engine": "google_maps",
     "q": q,
-    "ll": "@40.7455096,-74.0083012,15.1z",
     "type": "search",
     "api_key": get_api_key_serpapi()
   }

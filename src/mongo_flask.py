@@ -7,14 +7,15 @@ from flask import Flask, jsonify, abort, request
 from places_processing import extract_comments_serpapi_api
 from produce_image_embeddings import *
 from maps_research import get_location_local_results
+from flask_cors import CORS
 
 
 client = pymongo.MongoClient(
     os.getenv("MONGODB_URI", "mongodb://127.0.0.1:27017/database")
 )
 db = client.get_database()
-
 app = Flask(__name__)
+CORS(app)
 
 
 def stringify_id(pymongo_dict):
@@ -54,6 +55,7 @@ def get_profile(user_id):
 
 @app.route("/recommendations/<string:user_id>", methods=["GET"])
 def get_recommendations(user_id):
+
 	""" Returns all recommendations based on images provided by users and visited places"""
 	found_user = [user for user in db.users.find() if user["_id"] == ObjectId(f'{user_id}')]
 	if found_user:
@@ -93,7 +95,7 @@ def create_new_post(object_id):
 					last_key = int(max(list(new_post["places_recommendations"].keys())))
 				for i, [similar_id, similar_name] in enumerate(place_features["similar_results"].items()):
 					new_post["places_recommendations"][str(i+last_key)] = {"id": similar_id, 'name': similar_name,
-																	'tags': place_features["type"],
+																	'tags': place_features["type"][0],
 																	"original":{"google_id": place["search"],
 																				"name": place_features['name']}}
 					new_post["profile"].extend([place_features["type"][0]])
@@ -119,7 +121,7 @@ def create_new_post(object_id):
 				if not new_post.get("images_recommendations", None):
 					new_post['images_recommendations'] = {}
 				new_post['images_recommendations'].update({str(j+i*j): {"coordinates": coordinate_recommendation,
-																		"tag": tag,
+																		"tag": tag[0],
 																		"original": urls[i]}})
 				if j==0:
 					new_post["profile"].extend([tag])
@@ -131,8 +133,6 @@ def create_new_post(object_id):
 
 		return jsonify({"id": str(post_id)})
 	return {"Error": "User already exists"}
-
-
 
 
 @app.route("/get_posts")
@@ -149,7 +149,7 @@ def get_posts():
 
 
 if __name__ == "__main__":
-	app.run(debug=True, port=5001)
+	app.run(host="0.0.0.0", port=5001)
 	db.create_collection("users")
 	db.create_collection("places")
 
