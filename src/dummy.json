@@ -11,16 +11,15 @@
 		},
 		"2": {
 			"search": "!4m5!3m4!1s0x0:0xb6a84270b4e7fbe0!8m2!3d46.5285853!4d6.5999575"
+		},
+		"3": {
+			"search": "!4m5!3m4!1s0x0:0xa03d70219c309d46!8m2!3d46.5287017!4d6.6259245"
 		}
 	},
 	"registered_images": {
 		"0": {
 			"url": "https://personal-blog-posts.s3.eu-central-1.amazonaws.com/IMG_0236.JPG",
 			"tags": "bridge,sunny,city"
-		},
-		"1": {
-			"urls": "...",
-			"tags": "..."
 		}
 	}
 }

@@ -44,6 +44,7 @@ def return_places():
 
 @app.route("/profile/<string:user_id>", methods=["GET"])
 def get_profile(user_id):
+	""" Returns all tags linked to a user"""
 	found_user = [user for user in db.users.find() if user["_id"] == ObjectId(f'{user_id}')]
 	if found_user:
 		user = found_user[0]
@@ -52,7 +53,8 @@ def get_profile(user_id):
 
 
 @app.route("/recommendations/<string:user_id>", methods=["GET"])
-def create_recommendations(user_id):
+def get_recommendations(user_id):
+	""" Returns all recommendations based on images provided by users and visited places"""
 	found_user = [user for user in db.users.find() if user["_id"] == ObjectId(f'{user_id}')]
 	if found_user:
 		user = found_user[0]
@@ -67,10 +69,11 @@ def create_new_post(object_id):
 	"""Takes a blog post via a POST request and inserts it into the database."""
 
 	new_post = request.json
-	new_post = new_post["User0"]
 	new_post["places_recommendations"] = {}
 	new_post["images_recommendations"] = {}
 	new_post["profile"] = []
+
+	# if user do not exist
 	found_user = [user for user in db.users.find() if user["_id"] == ObjectId(f'{object_id}')]
 	if not found_user:
 		if not new_post.get("registered_places", None) and not new_post.get("registered_images", None):
@@ -93,40 +96,41 @@ def create_new_post(object_id):
 																	'tags': place_features["type"],
 																	"original":{"google_id": place["search"],
 																				"name": place_features['name']}}
-					new_post["profile"].extend([tag for tag in place_features["type"]])
+					new_post["profile"].extend([place_features["type"][0]])
 
-	# inputs urls images, output: embeddings: tensorflow pickle file
-	registered_images = [new_post['registered_images']]
+		# inputs urls images, output: embeddings: tensorflow pickle file
+		registered_images = [new_post['registered_images']]
+		urls = [url['url'] for url in new_post['registered_images'].values()]
+		tags_collection = [url['tags'] for url in new_post['registered_images'].values()]
 
-	urls = [url['url'] for url in new_post['registered_images'].values()]
-	tags = [url['tags'] for url in new_post['registered_images'].values()]
+		image_file_path = r"C:\Users\Lucas\Desktop\Lauzhack2022\mend-mi\data\images_test"
+		files = [os.path.join(image_file_path, file) for file in os.listdir(image_file_path)
+					if os.path.isfile(os.path.join(image_file_path, file))]
 
-	image_file_path = r"C:\Users\Lucas\Desktop\Lauzhack2022\mend-mi\data\images_test"
-	files = [os.path.join(image_file_path, file) for file in os.listdir(image_file_path)
-				if os.path.isfile(os.path.join(image_file_path, file))]
+		embeddings = embeddings_from_images(files)
+		with open(r"C:\Users\Lucas\Desktop\Lauzhack2022\mend-mi\data\embeddings.pickle", 'wb') as outfile:
+			pickle.dump(embeddings, outfile)
 
-	embeddings = embeddings_from_images(files)
-	with open(r"C:\Users\Lucas\Desktop\Lauzhack2022\mend-mi\data\embeddings.pickle", 'wb') as outfile:
-		pickle.dump(embeddings, outfile)
+		# two functions: inputs tags, embeddings, location=str, outputs: {recommendation, tags}
+		coordinate_recommendation = []
+		for i, tags in enumerate(tags_collection):
+			for j, tag in enumerate(tags.split(",")):
+				coordinate_recommendation = get_location_local_results(q=f"{tag} Lausanne")
+				if not new_post.get("images_recommendations", None):
+					new_post['images_recommendations'] = {}
+				new_post['images_recommendations'].update({str(j+i*j): {"coordinates": coordinate_recommendation,
+																		"tag": tag,
+																		"original": urls[i]}})
+				if j==0:
+					new_post["profile"].extend([tag])
 
-	# two functions: inputs tags, embeddings, location=str, outputs: {recommendation, tags}
-	coordinate_recommendation = []
-	for i, tag_ in enumerate(tags):
-		for j, tag in enumerate(tag_.split(",")):
-			coordinate_recommendation = get_location_local_results(q=f"{tag} Lausanne")
-			if not new_post.get("images_recommendations", None):
-				new_post['images_recommendations'] = {}
-			new_post['images_recommendations'].update({str(j+i*j): {"coordinates": coordinate_recommendation,
-																	"tag": tag,
-																	"original": urls[i]}})
-			new_post["profile"].extend([tag])
+		recommendations = image_query(tags="", location="Lausanne", embeddings=embeddings)
 
-	recommendations = image_query(tags="", location="Lausanne", embeddings=embeddings)
+		# Add Recommendations based on registered Images and Tags
+		post_id = db.users.insert_one(new_post).inserted_id
 
-	# Add Recommendations based on registered Images and Tags
-	post_id = db.users.insert_one(new_post).inserted_id
-
-	return jsonify({"id": str(post_id)})
+		return jsonify({"id": str(post_id)})
+	return {"Error": "User already exists"}
 
 
 

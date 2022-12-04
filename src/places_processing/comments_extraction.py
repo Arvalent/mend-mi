@@ -68,37 +68,45 @@ def extract_comments_serpapi_api(place_id, n_comments, save=False, output_path=N
 
     data_id = results['place_results']["data_id"]
     reviews['data_id'] = data_id
-    reviews['rating'] = results['place_results']['rating']
-    reviews['type'] = results['place_results']['type']
-    reviews['extensions'] = results['place_results']['extensions']
-    reviews['name'] = results['place_results']['title']
-    similar_places = results['place_results']['people_also_search_for'][0]['local_results']
+    if results['place_results'].get('rating',None):
+        reviews['rating'] = results['place_results']['rating']
+    if results['place_results'].get('type', None):
+        reviews['type'] = results['place_results']['type']
+    if results['place_results'].get('extensions', None):
+        reviews['extensions'] = results['place_results']['extensions']
+    if results['place_results'].get('title', None):
+        reviews['name'] = results['place_results']['title']
+    similar_places = None
+    if results['place_results'].get('people_also_search_for', None):
+        similar_places = results['place_results']['people_also_search_for'][0]['local_results']
     reviews['similar_results'] = {}
-    for i, similar in enumerate(similar_places):
-        reviews['similar_results'].update({similar['data_id']: similar['title']})
+    if similar_places:
+        for i, similar in enumerate(similar_places):
+            reviews['similar_results'].update({similar['data_id']: similar['title']})
 
     # Extract comment from the place 10 by 10 to do a mood extraction
     params = {"engine": "google_maps_reviews", "data_id": data_id, "api_key": API_KEY,  "hl": 'en'}
     search = GoogleSearch(params)
     results = search.get_dict()
-    reviews['comments'].update({str(int(i)): result['snippet'] for i, result in enumerate(results['reviews'])})
-    last_key = int(max(list(reviews['comments'].keys())))
-    for i in range(int(n_comments / 10.0)):
-        if results['serpapi_pagination']['next_page_token']:
-            params.update({"next_page_token": results['serpapi_pagination']['next_page_token']})
-            search = GoogleSearch(params)
-            results = search.get_dict()
-            for j, result in enumerate(results['reviews']):
-                # if the text is translated
-                if 'Translated' in result['snippet']:
-                    text = result['snippet']
-                    start_ = re.search('Translated by Google\) ', text).end()
-                    end_ = re.search(" \(Original\)", text).start()
-                    text = text[start_:end_]
-                    reviews['comments'].update({str(last_key+j+i*10): text})
-                # plain text
-                else:
-                    reviews['comments'].update({str(last_key+j+i*10): result['snippet']})
+    if results.get("reviews", None):
+        reviews['comments'].update({str(int(i)): result['snippet'] for i, result in enumerate(results['reviews'])})
+        last_key = int(max(list(reviews['comments'].keys())))
+        for i in range(int(n_comments / 10.0)):
+            if results['serpapi_pagination']['next_page_token']:
+                params.update({"next_page_token": results['serpapi_pagination']['next_page_token']})
+                search = GoogleSearch(params)
+                results = search.get_dict()
+                for j, result in enumerate(results['reviews']):
+                    # if the text is translated
+                    if 'Translated' in result['snippet']:
+                        text = result['snippet']
+                        start_ = re.search('Translated by Google\) ', text).end()
+                        end_ = re.search(" \(Original\)", text).start()
+                        text = text[start_:end_]
+                        reviews['comments'].update({str(last_key+j+i*10): text})
+                    # plain text
+                    else:
+                        reviews['comments'].update({str(last_key+j+i*10): result['snippet']})
 
     # TODO: ensure we do not erase previous comments
     if output_file:
