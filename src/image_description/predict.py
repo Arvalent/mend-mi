@@ -2,7 +2,8 @@ import numpy as np
 from PIL import Image
 from pickle import load
 from keras.applications.xception import preprocess_input
-from keras.preprocessing.sequence import pad_sequences
+#from tensorflow.keras.preprocessing.sequence import pad_sequences
+from keras.utils import pad_sequences
 import tensorflow as tf
 
 

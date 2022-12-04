@@ -1,0 +1,1 @@
+from .extract_map_search import get_location_local_results

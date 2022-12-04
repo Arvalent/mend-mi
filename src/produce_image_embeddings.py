@@ -1,9 +1,8 @@
 import tensorflow as tf
-from einops import rearrange, repeat
+from einops import repeat
 from transformers import BertTokenizer, TFBertModel
 from image_description.predict import predict
 from bs4 import BeautifulSoup
-import numpy as np
 import subprocess
 import requests
 import shutil
