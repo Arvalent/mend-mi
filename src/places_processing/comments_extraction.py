@@ -12,7 +12,8 @@ import googlemaps
 import os
 import re
 from serpapi import GoogleSearch
-from api_key import get_api_key, get_api_key_serpapi
+
+from .api_key import get_api_key, get_api_key_serpapi
 
 
 def extract_comments_google_maps_api(place_id, api_key, update=False, save=False, output_path=None):
@@ -70,6 +71,7 @@ def extract_comments_serpapi_api(place_id, n_comments, save=False, output_path=N
     reviews['rating'] = results['place_results']['rating']
     reviews['type'] = results['place_results']['type']
     reviews['extensions'] = results['place_results']['extensions']
+    reviews['name'] = results['place_results']['title']
     similar_places = results['place_results']['people_also_search_for'][0]['local_results']
     reviews['similar_results'] = {}
     for i, similar in enumerate(similar_places):
@@ -79,8 +81,8 @@ def extract_comments_serpapi_api(place_id, n_comments, save=False, output_path=N
     params = {"engine": "google_maps_reviews", "data_id": data_id, "api_key": API_KEY,  "hl": 'en'}
     search = GoogleSearch(params)
     results = search.get_dict()
-    reviews['comments'].update({i: result['snippet'] for i, result in enumerate(results['reviews'])})
-    last_key = max(list(reviews['comments'].keys()))
+    reviews['comments'].update({str(int(i)): result['snippet'] for i, result in enumerate(results['reviews'])})
+    last_key = int(max(list(reviews['comments'].keys())))
     for i in range(int(n_comments / 10.0)):
         if results['serpapi_pagination']['next_page_token']:
             params.update({"next_page_token": results['serpapi_pagination']['next_page_token']})
@@ -93,15 +95,17 @@ def extract_comments_serpapi_api(place_id, n_comments, save=False, output_path=N
                     start_ = re.search('Translated by Google\) ', text).end()
                     end_ = re.search(" \(Original\)", text).start()
                     text = text[start_:end_]
-                    reviews['comments'].update({last_key+j+i*10: text})
+                    reviews['comments'].update({str(last_key+j+i*10): text})
                 # plain text
                 else:
-                    reviews['comments'].update({last_key+j+i*10: result['snippet']})
+                    reviews['comments'].update({str(last_key+j+i*10): result['snippet']})
 
     # TODO: ensure we do not erase previous comments
     if output_file:
         with open(output_file, 'w') as outfile:
             json.dump(reviews, outfile, indent=4)
+
+    return reviews
 
 
 def extract_comment_tripadvisor():
@@ -110,7 +114,7 @@ def extract_comment_tripadvisor():
 
 if __name__ == "__main__":
 
-    data_path = r"C:\Users\Lucas\Desktop\Lauzhack2022\mend-mi\data"
+    data_path = r"/data"
     API_KEY = get_api_key()
 
     test_id = "ChIJz1bX4zMujEcRDLSYjd7SNyk"

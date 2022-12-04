@@ -3,4 +3,4 @@ def get_api_key():
 
 
 def get_api_key_serpapi():
-    return "58f57b7fdfcbac3d6d8f34c858174298cbdc9f6c14e477260e190d5d93250869"
+    return "725c792dbc2969a6f1acbf54fe3ec4a74ff04512a302715f05157c4631c83e9e"
