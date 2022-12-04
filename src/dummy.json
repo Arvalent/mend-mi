@@ -1,20 +1,24 @@
 {
-  "User0": {
-    "Name": "Anaune Hymous",
-    "Age": 25,
-    "email": "anone.hymous@gmail.com",
-    "google_maps": {
-      "registered_places": {
-        "0": {
-          "search": "!4m5!3m4!1s0x0:0x3a6ff8042927ea2c!8m2!3d46.8053241!4d7.1562764",
-          "id": ""
-        },
-        "1": {
-          "search": "!4m5!3m4!1s0x0:0x47188bb9f8d68e6b!8m2!3d46.5246408!4d6.6143108",
-          "id": ""
-        },
-        "coordinate": "..."
-      }
-    }
-  }
+	"User0": {
+		"name": "Anaune Hymous",
+		"age": 25,
+		"email": "anone.hymous@gmail.com",
+		"registered_places": {
+			"0": {
+				"search": "!4m5!3m4!1s0x0:0x3a6ff8042927ea2c!8m2!3d46.8053241!4d7.1562764"
+			},
+			"1": {
+				"search": "!4m5!3m4!1s0x0:0x47188bb9f8d68e6b!8m2!3d46.5246408!4d6.6143108"
+			}
+		},
+		"registered_images": {
+			"0": {
+				"url": "https://personal-blog-posts.s3.eu-central-1.amazonaws.com/IMG_0236.JPG",
+				"id": ""
+			}
+		},
+		"recommendations": {
+		},
+		"profile": null
+	}
 }

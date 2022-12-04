@@ -160,7 +160,7 @@ cython_debug/
 .idea/
 
 # API key from google
-api_google_key.py
+
 
 # data folder
 data/
