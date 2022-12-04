@@ -36,6 +36,12 @@ def main():
 	return "App is up!"
 
 
+@app.route("/stored_places", methods=["GET"])
+def return_places():
+	places = {i: place for i, place in enumerate(db.places.find())}
+	return places
+
+
 @app.route("/profile/<string:user_id>", methods=["GET"])
 def get_profile(user_id):
 	found_user = [user for user in db.users.find() if user["_id"] == ObjectId(f'{user_id}')]
@@ -64,6 +70,7 @@ def create_new_post(object_id):
 	new_post = new_post["User0"]
 	new_post["places_recommendations"] = {}
 	new_post["images_recommendations"] = {}
+	new_post["profile"] = []
 	found_user = [user for user in db.users.find() if user["_id"] == ObjectId(f'{object_id}')]
 	if not found_user:
 		if not new_post.get("registered_places", None) and not new_post.get("registered_images", None):
@@ -86,6 +93,7 @@ def create_new_post(object_id):
 																	'tags': place_features["type"],
 																	"original":{"google_id": place["search"],
 																				"name": place_features['name']}}
+					new_post["profile"].extend([tag for tag in place_features["type"]])
 
 	# inputs urls images, output: embeddings: tensorflow pickle file
 	registered_images = [new_post['registered_images']]
@@ -111,6 +119,7 @@ def create_new_post(object_id):
 			new_post['images_recommendations'].update({str(j+i*j): {"coordinates": coordinate_recommendation,
 																	"tag": tag,
 																	"original": urls[i]}})
+			new_post["profile"].extend([tag])
 
 	recommendations = image_query(tags="", location="Lausanne", embeddings=embeddings)
 
